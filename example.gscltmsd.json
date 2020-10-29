@@ -1,0 +1,20 @@
+{
+    "mqtt": {
+        "host": "127.0.0.1",
+        "port": 1883,
+        "ssl": false,
+        "username": "test",
+        "password": "test"
+    },
+    "database": {
+        "host": "127.0.0.1",
+        "base": "mybase",
+        "user": "test",
+        "password": "test",
+        "to_xml": true
+    },
+    "routes": [{
+        "topic": "device/#",
+        "entry": "dbo.My_Entry_Point"
+    }]
+}

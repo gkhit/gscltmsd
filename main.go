@@ -1,14 +1,13 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
 
 	"github.com/gkhit/gscltmsd/service"
-
-	_ "github.com/denisenkom/go-mssqldb"
 )
 
 func main() {
@@ -19,25 +18,31 @@ func main() {
 		dir            string
 		err            error
 		configpath     string
-		opt            *service.ServiceOptions
-		svc            *service.Service
+		opt            *service.Options
 	)
-	filename = filepath.Base(os.Args[0])
-	extension = filepath.Ext(filename)
-	configfilename = filename[0 : len(filename)-len(extension)]
-	configfilename += ".json"
-	dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
-	if err != nil {
-		log.Fatal(err)
+
+	flag.StringVar(&configpath, "c", "", "full path to configuration json `file`")
+	flag.Parse()
+
+	if len(configpath) <= 0 {
+		filename = filepath.Base(os.Args[0])
+		extension = filepath.Ext(filename)
+		configfilename = filename[0 : len(filename)-len(extension)]
+		configfilename += ".json"
+		dir, err = filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			log.Fatal(err)
+		}
+		configpath = path.Join(dir, configfilename)
 	}
-	configpath = path.Join(dir, configfilename)
-	// configpath = "/home/thinker/projects/go/src/gkhit.ru/scada/mqcltmssvc/mqcltmssvc.json"
+	// configpath = "D:\\projects\\gscltmsd\\example.gscltmsd.json"
+	// configpath = "/home/thinker/projects/gscltmsd/example.gscltmsd.json"
 	opt = service.NewOptions()
 	err = opt.Load(configpath)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("[ERROR] Can't load configuration file. %v", err)
 	}
 
-	svc = service.NewService(opt)
+	svc := service.New(opt)
 	svc.Start()
 }

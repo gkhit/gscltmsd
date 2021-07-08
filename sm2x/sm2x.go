@@ -16,6 +16,7 @@ type ConvParameters struct {
 	SkipUnknown          bool // if 'true' skip unknown elements, else append '>UNKNOWN'
 	AppendHeader         bool // if 'true' append xml header '<?xml version="1.0" encoding="utf-8"?>'
 	DefaultRootTag       string
+	ExtendArray          bool
 }
 
 var defaultConvParameters = &ConvParameters{
@@ -25,6 +26,7 @@ var defaultConvParameters = &ConvParameters{
 	SkipUnknown:          false,
 	AppendHeader:         false,
 	DefaultRootTag:       "doc",
+	ExtendArray:          false,
 }
 
 // DefaultConversionParameters Return default conversion parameters
@@ -52,17 +54,17 @@ func Map2XML(m map[string]interface{}, rootTag ...string) ([]byte, error) {
 					switch v.(type) {
 					case map[string]interface{}: // noop
 					default: // anything else
-						err = mapToXML(s, p.DefaultRootTag, m, p)
+						err = mapToXML(s, p.DefaultRootTag, m, p, reflect.Invalid)
 						goto done
 					}
 				}
 			}
-			err = mapToXML(s, key, value, p)
+			err = mapToXML(s, key, value, p, reflect.Invalid)
 		}
 	} else if len(rootTag) == 1 {
-		err = mapToXML(s, rootTag[0], m, p)
+		err = mapToXML(s, rootTag[0], m, p, reflect.Invalid)
 	} else {
-		err = mapToXML(s, p.DefaultRootTag, m, p)
+		err = mapToXML(s, p.DefaultRootTag, m, p, reflect.Invalid)
 	}
 done:
 	if p.AppendHeader {
@@ -89,17 +91,17 @@ func Map2XMLParameters(m map[string]interface{}, params *ConvParameters, rootTag
 					switch v.(type) {
 					case map[string]interface{}: // noop
 					default: // anything else
-						err = mapToXML(s, p.DefaultRootTag, m, p)
+						err = mapToXML(s, p.DefaultRootTag, m, p, reflect.Invalid)
 						goto done
 					}
 				}
 			}
-			err = mapToXML(s, key, value, p)
+			err = mapToXML(s, key, value, p, reflect.Invalid)
 		}
 	} else if len(rootTag) == 1 {
-		err = mapToXML(s, rootTag[0], m, p)
+		err = mapToXML(s, rootTag[0], m, p, reflect.Invalid)
 	} else {
-		err = mapToXML(s, p.DefaultRootTag, m, p)
+		err = mapToXML(s, p.DefaultRootTag, m, p, reflect.Invalid)
 	}
 done:
 	if p.AppendHeader {
@@ -135,7 +137,7 @@ func escapeChars(s string) string {
 
 // where the work actually happens
 // returns an error if an attribute is not atomic
-func mapToXML(s *string, key string, value interface{}, p *ConvParameters) error {
+func mapToXML(s *string, key string, value interface{}, p *ConvParameters, parent reflect.Kind) error {
 	var endTag bool
 	var elen int
 
@@ -156,6 +158,10 @@ func mapToXML(s *string, key string, value interface{}, p *ConvParameters) error
 	switch value.(type) {
 	case map[string]interface{}, []byte, string, float64, bool, int, int32, int64, float32:
 		*s += `<` + key
+	case []interface{}:
+		if parent == reflect.Slice && p.ExtendArray {
+			*s += `<` + key
+		}
 	}
 	switch value.(type) {
 	case map[string]interface{}:
@@ -250,14 +256,22 @@ func mapToXML(s *string, key string, value interface{}, p *ConvParameters) error
 		var i int
 		for _, v := range elemlist {
 			i++
-			mapToXML(s, v[0].(string), v[1], p)
+			mapToXML(s, v[0].(string), v[1], p, reflect.Invalid)
 			i--
 		}
 		endTag = true
 		elen = 1 // we do have some content ...
 	case []interface{}:
+		if parent == reflect.Slice && p.ExtendArray {
+			*s += ">"
+		}
 		for _, v := range value.([]interface{}) {
-			mapToXML(s, key, v, p)
+			mapToXML(s, key, v, p, reflect.Slice)
+		}
+		if parent == reflect.Slice && p.ExtendArray {
+			endTag = true
+			elen = 1 // we do have some content ...
+			break
 		}
 		return nil
 	case nil:
@@ -333,6 +347,17 @@ func mapToXML(s *string, key string, value interface{}, p *ConvParameters) error
 				*s += `</` + key + ">"
 			} else {
 				*s += `/>`
+			}
+		case []interface{}:
+			if parent == reflect.Slice && p.ExtendArray {
+				if elen > 0 || p.GoEmptyElementSyntax {
+					if elen == 0 {
+						*s += ">"
+					}
+					*s += `</` + key + ">"
+				} else {
+					*s += `/>`
+				}
 			}
 		}
 	} else if p.GoEmptyElementSyntax {

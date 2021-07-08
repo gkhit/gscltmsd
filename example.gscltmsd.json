@@ -1,20 +1,18 @@
 {
     "mqtt": {
-        "host": "127.0.0.1",
-        "port": 1883,
-        "ssl": false,
+        "host": "134.0.119.147",
+        "auth_type": "basic",
         "username": "test",
-        "password": "test"
+        "password": "erzatc123",
+        "topic": "device/#"
     },
     "database": {
-        "host": "127.0.0.1",
-        "base": "mybase",
-        "user": "test",
-        "password": "test",
-        "to_xml": true
-    },
-    "routes": [{
-        "topic": "device/#",
-        "entry": "dbo.My_Entry_Point"
-    }]
+        "host": "10.10.17.30",
+        "dbname": "RKS_PERM_2_UL",
+        "user": "tpoto",
+        "password": "1",
+        "entry_point": "dbo.ASKUE_Data_Add_111",
+        "to_xml": true,
+        "xml_ext_array": true
+    }
 }

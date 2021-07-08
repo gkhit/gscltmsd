@@ -1,22 +1,19 @@
-# github.com/denisenkom/go-mssqldb v0.0.0-20200910202707-1e08a3fab204
+# github.com/denisenkom/go-mssqldb v0.10.0
 ## explicit
 github.com/denisenkom/go-mssqldb
 github.com/denisenkom/go-mssqldb/internal/cp
 github.com/denisenkom/go-mssqldb/internal/decimal
 github.com/denisenkom/go-mssqldb/internal/querytext
-# github.com/eclipse/paho.mqtt.golang v1.2.0
+# github.com/eclipse/paho.mqtt.golang v1.3.5
 ## explicit
 github.com/eclipse/paho.mqtt.golang
 github.com/eclipse/paho.mqtt.golang/packets
-# github.com/gkhit/sm2x v1.0.0
-## explicit
-github.com/gkhit/sm2x
 # github.com/golang-sql/civil v0.0.0-20190719163853-cb61b32ac6fe
 github.com/golang-sql/civil
-# golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+# github.com/gorilla/websocket v1.4.2
+github.com/gorilla/websocket
+# golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 golang.org/x/crypto/md4
-# golang.org/x/net v0.0.0-20201029055024-942e2f445f3c
-## explicit
+# golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
-golang.org/x/net/websocket

@@ -14,5 +14,9 @@
         "entry_point": "dbo.ASKUE_Data_Add_111",
         "to_xml": true,
         "xml_ext_array": true
-    }
+    },
+    "file_log": {
+        "enable": true
+    },
+    "debug": true
 }

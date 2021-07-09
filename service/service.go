@@ -8,12 +8,15 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/gkhit/gscltmsd/db"
+	fl "github.com/gkhit/gscltmsd/filelog"
 	"github.com/gkhit/gscltmsd/mq"
 	"github.com/gkhit/gscltmsd/sm2x"
 )
@@ -23,6 +26,8 @@ type (
 	Options struct {
 		Mqtt     mq.Options `json:"mqtt"`
 		Database db.Options `json:"database"`
+		FileLog  fl.Options `json:"file_log,omitempty"`
+		Debug    bool       `json:"debug,omitempty"`
 	}
 
 	// Service
@@ -36,6 +41,15 @@ type (
 
 // NewOptions
 func NewOptions() *Options {
+	cwd, _ := os.Getwd()
+
+	logDir := "/var"
+	if runtime.GOOS == "windows" {
+		logDir = cwd
+	}
+
+	logDir = filepath.Join(logDir, "log")
+
 	return &Options{
 		Mqtt: mq.Options{
 			Host:                 "127.0.0.1",
@@ -59,6 +73,14 @@ func NewOptions() *Options {
 			XMLRoot:     "doc",
 			XMLExtArray: false,
 		},
+		FileLog: fl.Options{
+			Enable:     false,
+			Directory:  logDir,
+			MaxSize:    25,
+			MaxAge:     10,
+			MaxBackups: 7,
+		},
+		Debug: false,
 	}
 }
 
@@ -89,6 +111,7 @@ func (o *Options) Load(path string) error {
 
 // New return new service instance
 func New(o *Options) (s *Service) {
+	fl.NewWithOptions(&o.FileLog)
 	return &Service{
 		opt: o,
 		db:  db.New(&o.Database),
@@ -151,8 +174,9 @@ func (s *Service) mqttHandler(c mqtt.Client, m mqtt.Message) {
 	}
 	defer conn.Close()
 
-	// for debug
-	// log.Printf("[INFO] Topic: %s\n %s\n", m.Topic(), string(payload))
+	if s.opt.Debug {
+		log.Printf("[DEBUG] %s %s\n", m.Topic(), string(payload))
+	}
 
 	_, err = conn.ExecContext(ctx, s.opt.Database.EntryPointFunc, m.Topic(), string(payload))
 	if err != nil {

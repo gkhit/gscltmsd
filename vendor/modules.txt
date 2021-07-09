@@ -17,3 +17,6 @@ golang.org/x/crypto/md4
 # golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0
 golang.org/x/net/internal/socks
 golang.org/x/net/proxy
+# gopkg.in/natefinch/lumberjack.v2 v2.0.0
+## explicit
+gopkg.in/natefinch/lumberjack.v2

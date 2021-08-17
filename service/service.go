@@ -112,11 +112,13 @@ func (o *Options) Load(path string) error {
 // New return new service instance
 func New(o *Options) (s *Service) {
 	fl.NewWithOptions(&o.FileLog)
-	return &Service{
+	s = &Service{
 		opt: o,
 		db:  db.New(&o.Database),
-		clt: mq.NewClient(&o.Mqtt),
 	}
+	o.Mqtt.OnConnectHandler = s.getOnConnectHandler()
+	s.clt = mq.NewClient(&o.Mqtt)
+	return
 }
 
 // Start starting service instance
@@ -128,14 +130,26 @@ func (s *Service) Start() {
 
 	defer cancel()
 
-	if token := s.clt.Subscribe(s.opt.Mqtt.Topic, s.opt.Mqtt.Qos, s.getHandler()); token.Wait() && token.Error() != nil {
-		log.Fatalf("[ERROR] Can't subscribe to topic \"%s\". %v\n", s.opt.Mqtt.Topic, token.Error())
-	}
+	// if token := s.clt.Subscribe(s.opt.Mqtt.Topic, s.opt.Mqtt.Qos, s.getHandler()); token.Wait() && token.Error() != nil {
+	// 	log.Fatalf("[ERROR] Can't subscribe to topic \"%s\". %v\n", s.opt.Mqtt.Topic, token.Error())
+	// }
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
 	s.clt.Disconnect(250)
+}
+
+func (s *Service) getOnConnectHandler() mqtt.OnConnectHandler {
+	var f = func(client mqtt.Client) {
+		log.Println("[INFO] Connect MQTT server successful")
+		if token := client.Subscribe(s.opt.Mqtt.Topic, s.opt.Mqtt.Qos, s.getHandler()); token.Wait() && token.Error() != nil {
+			log.Fatalf("[ERROR] Can't subscribe to topic \"%s\". %v\n", s.opt.Mqtt.Topic, token.Error())
+		} else {
+			log.Printf("[INFO] Subscribe to topic \"%s\" successful.\n", s.opt.Mqtt.Topic)
+		}
+	}
+	return f
 }
 
 func (s *Service) getHandler() mqtt.MessageHandler {

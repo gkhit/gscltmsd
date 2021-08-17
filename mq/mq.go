@@ -19,21 +19,22 @@ type (
 
 	// Options options of mqtt server
 	Options struct {
-		Host                 string   `json:"host"`
-		Port                 uint16   `json:"port,omitempty"`
-		Ssl                  bool     `json:"ssl,omitempty"`
-		AuthType             AuthType `json:"auth_type,omitempty"`
-		Username             string   `json:"username,omitempty"`
-		Password             string   `json:"password,omitempty"`
-		CACert               string   `json:"ca_cert,omitempty"`
-		ClientCert           string   `json:"client_cert,omitempty"`
-		ClientKey            string   `json:"client_key,omitempty"`
-		Insecure             bool     `json:"insecure,omitempty"`
-		KeepAlive            int64    `json:"keep_alive,omitempty"`
-		ConnectTimeout       int64    `json:"connect_timeout,omitempty"`
-		MaxReconnectInterval int64    `json:"max_reconnect_interval,omitempty"`
-		Qos                  byte     `json:"qos,omitempty"`
-		Topic                string   `json:"topic,omitempty"`
+		Host                 string                `json:"host"`
+		Port                 uint16                `json:"port,omitempty"`
+		Ssl                  bool                  `json:"ssl,omitempty"`
+		AuthType             AuthType              `json:"auth_type,omitempty"`
+		Username             string                `json:"username,omitempty"`
+		Password             string                `json:"password,omitempty"`
+		CACert               string                `json:"ca_cert,omitempty"`
+		ClientCert           string                `json:"client_cert,omitempty"`
+		ClientKey            string                `json:"client_key,omitempty"`
+		Insecure             bool                  `json:"insecure,omitempty"`
+		KeepAlive            int64                 `json:"keep_alive,omitempty"`
+		ConnectTimeout       int64                 `json:"connect_timeout,omitempty"`
+		MaxReconnectInterval int64                 `json:"max_reconnect_interval,omitempty"`
+		Qos                  byte                  `json:"qos,omitempty"`
+		Topic                string                `json:"topic,omitempty"`
+		OnConnectHandler     mqtt.OnConnectHandler `json:"-"`
 	}
 )
 
@@ -147,6 +148,14 @@ func NewClient(o *Options) mqtt.Client {
 	opts.SetAutoReconnect(true)
 	opts.SetCleanSession(true)
 
+	if o.OnConnectHandler != nil {
+		opts.SetOnConnectHandler(o.OnConnectHandler)
+	} else {
+		opts.SetOnConnectHandler(onConnectHandler)
+	}
+	opts.SetConnectionLostHandler(connectionLostHandler)
+	opts.SetReconnectingHandler(reconnectHandler)
+
 	client := mqtt.NewClient(opts)
 
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -154,4 +163,16 @@ func NewClient(o *Options) mqtt.Client {
 	}
 
 	return client
+}
+
+func onConnectHandler(c mqtt.Client) {
+	log.Println("[INFO] Connect MQTT server successful")
+}
+
+func connectionLostHandler(c mqtt.Client, e error) {
+	log.Printf("[WARN] Connection MQTT server lost: %v\n", e)
+}
+
+func reconnectHandler(c mqtt.Client, o *mqtt.ClientOptions) {
+	log.Println("[INFO] Reconnect MQTT server...")
 }
